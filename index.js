@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const { generatePlaylistDescription } = require('./openaiService');
-const { searchAmazonMusic, createPlaylistOnAmazon } = require('./amazonMusicService');
+const { amazonMusicTrackIds, newPlaylist, appendTracks } = require('./amazonMusicService');
 
 const app = express();
 app.use(bodyParser.json());
@@ -10,21 +10,14 @@ app.use(bodyParser.json());
 app.post('/create-playlist', async (req, res) => {
     try {
         const { userInput } = req.body;
-
-        // Generate playlist description using GPT-4
         const playlistDescription = await generatePlaylistDescription(userInput);
-
-        // Search Amazon Music for tracks
-        const tracks = await searchAmazonMusic(playlistDescription);
-        const trackIds = tracks.map(track => track.id);
-
-        // Create a new playlist on Amazon Music
-        const playlist = await createPlaylistOnAmazon("My Custom Playlist", trackIds);
-
+        const trackIds = await amazonMusicTrackIds(playlistDescription);
+        const playlistId = await newPlaylist(userInput);
+        const result = await appendTracks(playlistId, trackIds);
         res.json({
-            success: true,
-            playlistName: playlist.name,
-            trackCount: trackIds.length,
+            success: result.data.data.appendTracks.id !== undefined,
+            playlistName: result.data.data.appendTracks.title,
+            url: result.data.data.appendTracks.url,
         });
     } catch (error) {
         console.error(error);

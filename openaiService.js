@@ -4,13 +4,14 @@ const axios = require('axios');
 const generatePlaylistDescription = async (userInput) => {
     try {
         const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            // model: "gpt-4o-mini",
             model: "gpt-3.5-turbo",
             messages: [
                 { role: "system", content: "You are a helpful assistant." },
-                { role: "user", content: `Create a playlist with the following criteria: ${userInput}` }
+                { role: "user", content: `Create a playlist of 20 tracks with the following criteria: ${userInput}` }
             ],
-            max_tokens: 50,
-            temperature: 0.7,
+            max_tokens: 200,
+            temperature: 1.0,
         }, {
             headers: {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -19,7 +20,9 @@ const generatePlaylistDescription = async (userInput) => {
         });
 
         // return parsePlaylistResponse('Here are some upbeat workout songs for your playlist:\n\n1. "Can\'t Stop the Feeling!" by Justin Timberlake\n2. "Uptown Funk" by Mark Ronson ft. Bruno Mars\n3. "Don\'t Stop Believin"');
-        return parsePlaylistResponse(response.data.choices[0].message.content);
+        const artistTrackTuples = parsePlaylistResponse(response.data.choices[0].message.content);
+        console.log(artistTrackTuples)
+        return artistTrackTuples;
     } catch (error) {
         console.error('Error:', error.response ? error.response.data : error.message);
     }
